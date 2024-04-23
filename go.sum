@@ -1,0 +1,6 @@
+github.com/gernest/roaring v0.22.3 h1:/7uzKzgMsvtYnBndo53oVYti7dc9iQmwvaZDaU3SJ8Q=
+github.com/gernest/roaring v0.22.3/go.mod h1:7zYgTaDIXI0V6GCZj9u+130yQ3wK0OUxk6cLurb/jeI=
+github.com/molecula/apophenia v0.0.0-20190827192002-68b7a14a478b h1:cZADDaNYM7xn/nklO3g198JerGQjadFuA0ofxBJgK0Y=
+github.com/molecula/apophenia v0.0.0-20190827192002-68b7a14a478b/go.mod h1:uXd1BiH7xLmgkhVmspdJLENv6uGWrTL/MQX2TN7Yz9s=
+github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
+github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
