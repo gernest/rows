@@ -6,12 +6,115 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"time"
 
 	"errors"
 
 	"github.com/gernest/roaring"
 	"github.com/gernest/roaring/shardwidth"
 )
+
+type DataType byte
+
+const (
+	String DataType = 1 + iota
+	Int64
+	Float64
+	Timestamp
+)
+
+type ToRowser interface {
+	ToRows(func(*RowResult) error) error
+}
+
+func RowsToTable(tr ToRowser, n int) (*Table, error) {
+	var headers []*ColumnInfo
+	rows := make([]RowValue, 0, n)
+
+	// This callback gets called for every "row" in r.
+	// Each row populates its position in the pre-allocated
+	// `rows`. The headers get set based on those received
+	// in the first row.
+	cb := func(rr *RowResult) error {
+		if len(rows) == 0 {
+			headers = rr.Headers
+		}
+		rows = append(rows, rr.Columns)
+		return nil
+	}
+
+	if err := tr.ToRows(cb); err != nil {
+		return nil, fmt.Errorf("calling callback %w", err)
+	}
+
+	return &Table{
+		Headers: headers,
+		Rows:    rows,
+	}, nil
+}
+
+type Table struct {
+	Headers []*ColumnInfo
+	Rows    []RowValue
+}
+
+type RowResult struct {
+	Headers []*ColumnInfo
+	Columns []Value
+}
+
+type ColumnInfo struct {
+	Name     string
+	DataType DataType
+}
+
+type RowValue []Value
+
+type Value struct {
+	string    *string
+	int       *uint64
+	double    *float64
+	timestamp *uint64
+}
+
+func StringValue(s string) Value {
+	return Value{
+		string: &s,
+	}
+}
+func IntValue(v uint64) Value {
+	return Value{
+		int: &v,
+	}
+}
+
+func (v Value) String() string {
+	if v.string != nil {
+		return *v.string
+	}
+	return ""
+}
+
+func (v Value) Int() uint64 {
+	if v.int != nil {
+		return *v.int
+	}
+	return 0
+}
+
+func (v Value) Float64() float64 {
+	if v.int != nil {
+		return *v.double
+	}
+	return 0
+}
+
+func (v Value) Time() time.Time {
+	if v.timestamp != nil {
+		return time.UnixMilli(int64(*v.timestamp)).UTC()
+	}
+	return time.Time{}
+}
 
 // Row is a set of integers (the associated columns).
 type Row struct {
@@ -41,6 +144,49 @@ func NewRow(columns ...uint64) *Row {
 		r.SetBit(i)
 	}
 	return r
+}
+
+func (r *Row) ToTable() (*Table, error) {
+	var n int
+	if len(r.Keys) > 0 {
+		n = len(r.Keys)
+	} else {
+		n = len(r.Columns())
+	}
+	return RowsToTable(r, n)
+}
+
+func (r *Row) ToRows(callback func(*RowResult) error) error {
+	if len(r.Keys) > 0 {
+		// Column keys
+		ci := []*ColumnInfo{
+			{Name: "_id", DataType: String},
+		}
+		for _, x := range r.Keys {
+			if err := callback(&RowResult{
+				Headers: ci,
+				Columns: []Value{StringValue(x)},
+			}); err != nil {
+				return fmt.Errorf("calling callback %w", err)
+			}
+			ci = nil // only send on the first
+		}
+	} else {
+		// Column IDs
+		ci := []*ColumnInfo{
+			{Name: "_id", DataType: Int64},
+		}
+		for _, x := range r.Columns() {
+			if err := callback(&RowResult{
+				Headers: ci,
+				Columns: []Value{IntValue(x)},
+			}); err != nil {
+				return fmt.Errorf("calling callback %w", err)
+			}
+			ci = nil // only send on the first
+		}
+	}
+	return nil
 }
 
 func (r *Row) Clone() (clone *Row) {
