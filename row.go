@@ -621,6 +621,14 @@ type RowSegment struct {
 	n uint64
 }
 
+func NewSegment(data *roaring.Bitmap, shard uint64, writable bool) *RowSegment {
+	return &RowSegment{
+		data:     data,
+		shard:    shard,
+		writable: writable,
+	}
+}
+
 func (s *RowSegment) Shard() uint64 {
 	return s.shard
 }
