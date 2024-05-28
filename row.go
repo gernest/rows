@@ -318,7 +318,7 @@ func (r *Row) Merge(other *Row) {
 	}
 
 	r.Segments = segments
-	r.invalidateCount()
+	r.InvalidateCount()
 }
 
 // intersectionCount returns the number of intersections between r and other.
@@ -534,8 +534,8 @@ func (r *Row) createSegmentIfNotExists(shard uint64) *RowSegment {
 	return &r.Segments[i]
 }
 
-// invalidateCount updates the cached count in the row.
-func (r *Row) invalidateCount() {
+// InvalidateCount updates the cached count in the row.
+func (r *Row) InvalidateCount() {
 	for i := range r.Segments {
 		r.Segments[i].InvalidateCount()
 	}
@@ -621,8 +621,8 @@ type RowSegment struct {
 	n uint64
 }
 
-func NewSegment(data *roaring.Bitmap, shard uint64, writable bool) *RowSegment {
-	return &RowSegment{
+func NewSegment(data *roaring.Bitmap, shard uint64, writable bool) RowSegment {
+	return RowSegment{
 		data:     data,
 		shard:    shard,
 		writable: writable,
