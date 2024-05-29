@@ -637,6 +637,10 @@ func (s *RowSegment) Freeze() {
 	s.data = s.data.Freeze()
 }
 
+func (s *RowSegment) Data() *roaring.Bitmap {
+	return s.data
+}
+
 /*
 // Raw returns the row segment as a byte slice.
 // It may be used by the gRPC server to deliver results
