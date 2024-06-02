@@ -566,6 +566,12 @@ func (r *Row) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&o)
 }
 
+func (r *Row) RangeColumns(f func(uint64)) {
+	for i := range r.Segments {
+		r.Segments[i].RangeColumns(f)
+	}
+}
+
 // Columns returns the columns in r as a slice of ints.
 func (r *Row) Columns() []uint64 {
 	// We occasionally hit cases where we want to call Columns on something
@@ -760,6 +766,13 @@ func (s *RowSegment) ClearBit(i uint64) (changed bool) {
 // InvalidateCount updates the cached count in the row.
 func (s *RowSegment) InvalidateCount() {
 	s.n = s.data.Count()
+}
+
+func (s *RowSegment) RangeColumns(f func(uint64)) {
+	itr := s.data.Iterator()
+	for v, eof := itr.Next(); !eof; v, eof = itr.Next() {
+		f(v)
+	}
 }
 
 // Columns returns a list of all columns set in the segment.
