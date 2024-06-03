@@ -566,10 +566,14 @@ func (r *Row) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&o)
 }
 
-func (r *Row) RangeColumns(f func(uint64)) {
+func (r *Row) RangeColumns(f func(uint64) error) error {
 	for i := range r.Segments {
-		r.Segments[i].RangeColumns(f)
+		err := r.Segments[i].RangeColumns(f)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // Columns returns the columns in r as a slice of ints.
@@ -768,11 +772,15 @@ func (s *RowSegment) InvalidateCount() {
 	s.n = s.data.Count()
 }
 
-func (s *RowSegment) RangeColumns(f func(uint64)) {
+func (s *RowSegment) RangeColumns(f func(uint64) error) error {
 	itr := s.data.Iterator()
 	for v, eof := itr.Next(); !eof; v, eof = itr.Next() {
-		f(v)
+		err := f(v)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // Columns returns a list of all columns set in the segment.
